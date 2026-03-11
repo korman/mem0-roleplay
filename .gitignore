@@ -1,0 +1,10 @@
+# 忽略 Mem0 本地数据库（每台电脑独立）
+mem0_db/
+mem0_graph.kuzu/
+*.db
+
+# Python 常见忽略
+__pycache__/
+*.pyc
+.venv/
+uv.lock  # 等你 commit 一次后再取消这行（第一次提交时保留）
