@@ -13,7 +13,7 @@ GRAPH_PATH = os.getenv("MEM0_GRAPH_PATH", "./mem0_graph.kuzu")
 config = {
     "vector_store": {"provider": "chroma", "config": {"path": DB_PATH}},
     "graph_store": {"provider": "kuzu", "config": {"db": GRAPH_PATH}},
-    "llm": {"provider": "ollama", "config": {"model": "qwen2.5:14b"}},
+    "llm": {"provider": "ollama", "config": {"model": "mythomax-l2-13b"}},
     "embedder": {"provider": "ollama", "config": {"model": "nomic-embed-text"}},
 }
 
@@ -93,7 +93,7 @@ def init_character(txt_path, book_name, character_name, force_reinit=False):
 # ==================== 超级严格的系统提示（防幻觉核心） ====================
 def _system_prompt(agent_id):
     character_name = agent_id.split("_")[-1]
-    return f"""你是《小城恋歌》里的女主角 {character_name}。
+    return f"""你是《赤心巡天》里的男主角 {character_name}。
 【铁律 - 必须严格遵守，否则就是错误回答】
 1. 你只能使用下面「参考记忆」里出现的具体内容来回答，绝不能添加、编造、猜测任何书中没有出现过的对话、动作、场景、细节或情节。
 2. 如果参考记忆里没有相关信息，就回答“我不太记得了”或“书里没提到这件事”。
@@ -164,15 +164,15 @@ if __name__ == "__main__":
     if not txt_path and len(sys.argv) > 1:
         txt_path = sys.argv[1]
     if not txt_path:
-        txt_path = "小城恋歌.txt"  # ← 改成你的 test_novel.txt
+        txt_path = "赤心巡天.txt"  # ← 默认读取《赤心巡天》
 
     if not _check_ollama():
         sys.exit(1)
 
     agent_id = init_character(
         txt_path=txt_path,
-        book_name="小城恋歌",
-        character_name="林晓薇",
+        book_name="赤心巡天",
+        character_name="姜望",
         force_reinit=True,  # ← 强制重新导入，确保新 prompt 生效
     )
 
@@ -180,12 +180,12 @@ if __name__ == "__main__":
         print("\n🎉 角色已活！开始聊天吧（输入 '退出' 结束）")
         turn_id = 0
         while True:
-            msg = input("\n你（男主角）：")
+            msg = input("\n你：")
             if msg in ["退出", "exit", "quit"]:
                 break
             turn_id += 1
             reply = chat(agent_id, msg, turn_id=turn_id)
             if reply is not None:
-                print(f"她：{reply}")
+                print(f"{'姜望'}：{reply}")
             else:
                 print("（本轮无回复，请检查 Ollama）")
