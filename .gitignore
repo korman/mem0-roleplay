@@ -2,6 +2,8 @@
 mem0_db/
 mem0_graph.kuzu/
 *.db
+*.kuzu
+*.txt
 
 # Python 常见忽略
 __pycache__/
