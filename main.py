@@ -17,7 +17,13 @@ config = {
     "embedder": {"provider": "ollama", "config": {"model": "nomic-embed-text"}},
 }
 
-memory = Memory(MemoryConfig(**config))
+try:
+    print(f"[mem0] 当前图谱配置: {config.get('graph_store')}")
+    memory = Memory(MemoryConfig(**config))
+except Exception as e:
+    print(f"❌ 初始化 Mem0 Memory 失败，请检查配置: {e}")
+    raise
+
 LLM_MODEL = config["llm"]["config"]["model"]
 
 CHUNK_MAX_CHARS = 6000
@@ -62,29 +68,54 @@ def init_character(txt_path, book_name, character_name, force_reinit=False):
 
     # 分章
     chapters = re.split(r"第[一二三四五六七八九十百千零\d]+章", text)
+    print(f"[init] 总共切分出 {len(chapters)} 段章节原始片段")
+
     chapter_num = 0
+    total_segments = 0
+    success_segments = 0
+    failed_segments = 0
+
     for i, chap in enumerate(chapters):
         chap = chap.strip()
         if len(chap) <= 300:
             continue
         chapter_num += 1
+        print(f"[init] 处理第 {chapter_num} 章，长度约 {len(chap)} 字")
+
         for seg_idx in range(0, len(chap), CHUNK_MAX_CHARS):
             segment = chap[seg_idx : seg_idx + CHUNK_MAX_CHARS]
             if len(segment.strip()) < 50:
                 continue
-            memory.add(
-                f"第{chapter_num}章（部分{seg_idx // CHUNK_MAX_CHARS + 1}）：{segment}",
-                user_id=USER_ID,
-                agent_id=agent_id,
-                metadata={"book": book_name, "chapter": chapter_num},
-            )
+
+            total_segments += 1
+            part_idx = seg_idx // CHUNK_MAX_CHARS + 1
+            try:
+                memory.add(
+                    f"第{chapter_num}章（部分{part_idx}）：{segment}",
+                    user_id=USER_ID,
+                    agent_id=agent_id,
+                    metadata={"book": book_name, "chapter": chapter_num},
+                )
+                success_segments += 1
+            except Exception as e:
+                failed_segments += 1
+                print(
+                    f"⚠️ 写入图谱/记忆失败：第 {chapter_num} 章，第 {part_idx} 段，错误：{e}"
+                )
+
+    print(
+        f"[init] 导入摘要：共尝试写入 {total_segments} 段，成功 {success_segments} 段，失败 {failed_segments} 段"
+    )
 
     # 核心人格记忆
-    memory.add(
-        f"你是《{book_name}》里的 {character_name}，严格按照书中你的性格、说话方式和所有经历来回应。",
-        user_id=USER_ID,
-        agent_id=agent_id,
-    )
+    try:
+        memory.add(
+            f"你是《{book_name}》里的 {character_name}，严格按照书中你的性格、说话方式和所有经历来回应。",
+            user_id=USER_ID,
+            agent_id=agent_id,
+        )
+    except Exception as e:
+        print(f"⚠️ 写入核心人格记忆失败：{e}")
 
     print(f"✅ {character_name} 初始化完成！记忆和 Kuzu 图谱已就绪")
     return agent_id
