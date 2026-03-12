@@ -4,17 +4,18 @@ import os
 
 
 DB_PATH = os.getenv("MEM0_DB_PATH", "./mem0_db")
-GRAPH_PATH = os.getenv("MEM0_GRAPH_PATH", "./mem0_graph.kuzu")
 
 
 def build_memory():
     """
     使用与 main.py 相同的配置构建 Memory 实例。
     这样自检脚本与正式导入共享同一套向量库和图谱库。
+    当前仅使用向量记忆（Graph Memory 已关闭）。
     """
     config = {
         "vector_store": {"provider": "chroma", "config": {"path": DB_PATH}},
-        "graph_store": {"provider": "kuzu", "config": {"db": GRAPH_PATH}},
+        # 自检脚本也只验证向量写入，不再触发 Graph Memory
+        # "graph_store": {"provider": "kuzu", "config": {"db": GRAPH_PATH}},
         "llm": {"provider": "ollama", "config": {"model": "mythomax-l2-13b"}},
         "embedder": {"provider": "ollama", "config": {"model": "nomic-embed-text"}},
     }
@@ -43,7 +44,7 @@ def run_graph_health_check():
 
     print("\n✅ 自检写入完成。")
     print(
-        "现在请运行 `uv run view_graph.py`，检查是否出现带有 agent_id=graph_test 的 Entity 节点。"
+        "（当前 Graph Memory 已关闭：本自检仅确认向量写入是否成功，不再检查图谱节点）"
     )
 
 

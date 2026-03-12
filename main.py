@@ -8,17 +8,20 @@ import sys
 
 # 数据路径可配置（跨设备友好）
 DB_PATH = os.getenv("MEM0_DB_PATH", "./mem0_db")
-GRAPH_PATH = os.getenv("MEM0_GRAPH_PATH", "./mem0_graph.kuzu")
 
 config = {
     "vector_store": {"provider": "chroma", "config": {"path": DB_PATH}},
-    "graph_store": {"provider": "kuzu", "config": {"db": GRAPH_PATH}},
-    "llm": {"provider": "ollama", "config": {"model": "mythomax-l2-13b"}},
+    # 暂时关闭 Graph Memory（Kuzu 图谱），只用向量记忆
+    # "graph_store": {"provider": "kuzu", "config": {"db": GRAPH_PATH}},
+    "llm": {"provider": "ollama", "config": {"model": "qwen2.5:14b"}},
     "embedder": {"provider": "ollama", "config": {"model": "nomic-embed-text"}},
 }
 
+print("🚀 当前模式：仅使用 Chroma 向量记忆（Graph Memory 已关闭）")
+print(f"   - 向量库路径: {config['vector_store']['config']['path']}")
+print(f"   - 主 LLM:      {config['llm']['config']['model']}")
+
 try:
-    print(f"[mem0] 当前图谱配置: {config.get('graph_store')}")
     memory = Memory(MemoryConfig(**config))
 except Exception as e:
     print(f"❌ 初始化 Mem0 Memory 失败，请检查配置: {e}")
@@ -77,7 +80,7 @@ def init_character(txt_path, book_name, character_name, force_reinit=False):
 
     for i, chap in enumerate(chapters):
         chap = chap.strip()
-        if len(chap) <= 300:
+        if len(chap) <= 100:
             continue
         chapter_num += 1
         print(f"[init] 处理第 {chapter_num} 章，长度约 {len(chap)} 字")
@@ -95,6 +98,7 @@ def init_character(txt_path, book_name, character_name, force_reinit=False):
                     user_id=USER_ID,
                     agent_id=agent_id,
                     metadata={"book": book_name, "chapter": chapter_num},
+                    infer=False,
                 )
                 success_segments += 1
             except Exception as e:
@@ -113,6 +117,7 @@ def init_character(txt_path, book_name, character_name, force_reinit=False):
             f"你是《{book_name}》里的 {character_name}，严格按照书中你的性格、说话方式和所有经历来回应。",
             user_id=USER_ID,
             agent_id=agent_id,
+            infer=False,
         )
     except Exception as e:
         print(f"⚠️ 写入核心人格记忆失败：{e}")
@@ -124,7 +129,7 @@ def init_character(txt_path, book_name, character_name, force_reinit=False):
 # ==================== 超级严格的系统提示（防幻觉核心） ====================
 def _system_prompt(agent_id):
     character_name = agent_id.split("_")[-1]
-    return f"""你是《赤心巡天》里的男主角 {character_name}。
+    return f"""你是《星辰的秘密》里的女主角 {character_name}。
 【铁律 - 必须严格遵守，否则就是错误回答】
 1. 你只能使用下面「参考记忆」里出现的具体内容来回答，绝不能添加、编造、猜测任何书中没有出现过的对话、动作、场景、细节或情节。
 2. 如果参考记忆里没有相关信息，就回答“我不太记得了”或“书里没提到这件事”。
@@ -175,7 +180,10 @@ def chat(agent_id, user_input, turn_id=None):
         return None
 
     memory.add(
-        f"用户：{user_input}\n你：{response}", user_id=USER_ID, agent_id=agent_id
+        f"用户：{user_input}\n你：{response}",
+        user_id=USER_ID,
+        agent_id=agent_id,
+        infer=False,
     )
     return response
 
@@ -195,15 +203,15 @@ if __name__ == "__main__":
     if not txt_path and len(sys.argv) > 1:
         txt_path = sys.argv[1]
     if not txt_path:
-        txt_path = "赤心巡天.txt"  # ← 默认读取《赤心巡天》
+        txt_path = "星辰的秘密.txt"  # ← 默认读取《星辰的秘密》
 
     if not _check_ollama():
         sys.exit(1)
 
     agent_id = init_character(
         txt_path=txt_path,
-        book_name="赤心巡天",
-        character_name="姜望",
+        book_name="星辰的秘密",
+        character_name="林星辰",
         force_reinit=True,  # ← 强制重新导入，确保新 prompt 生效
     )
 
@@ -217,6 +225,6 @@ if __name__ == "__main__":
             turn_id += 1
             reply = chat(agent_id, msg, turn_id=turn_id)
             if reply is not None:
-                print(f"{'姜望'}：{reply}")
+                print(f"{'林星辰'}：{reply}")
             else:
                 print("（本轮无回复，请检查 Ollama）")

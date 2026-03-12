@@ -3,7 +3,7 @@
 `mem0-roleplay` 是一个基于 [Mem0](https://docs.mem0.ai)、Kuzu 图数据库和 Ollama 的**小说角色扮演与记忆图谱实验项目**。
 
 它可以：
-- 从整本小说（TXT）中自动导入章节内容，构建向量记忆与关系图谱；
+- 从整本小说（TXT）中自动导入章节内容，构建向量记忆（当前默认仅启用向量记忆，Graph Memory 暂时关闭）；
 - 将某个角色“活起来”，与你进行持续对话；
 - 使用**强约束 System Prompt + 检索记忆**的方式，尽量避免模型胡编乱造（防幻觉）；
 - 通过命令行脚本快速查看 Kuzu 图数据库中的节点和关系结构。
@@ -39,7 +39,7 @@
 `mem0-roleplay` 的目标是探索这样一个流程：
 
 1. 给定一部小说 TXT 和一个角色名；
-2. 自动分章、切片，将内容导入 Mem0 的**向量存储 + 图存储（Kuzu）**；
+2. 自动分章、切片，将内容导入 Mem0 的**向量存储**（Graph Memory / Kuzu 图谱当前默认关闭，如需启用需额外配置图数据库与兼容的 LLM）；
 3. 定义一个**极其严格的系统提示**，要求模型仅凭“检索到的原文记忆”回答；
 4. 用户从命令行与角色对话，并可以用脚本查看背后生成的记忆图谱。
 
@@ -167,9 +167,12 @@ uv run main.py
 
 运行后，你会在控制台看到章节导入与“角色已活”的提示，然后可以直接在命令行中与角色对话（输入 `退出/exit/quit` 结束）。
 
-### 5. 查看记忆图谱
+### 5. （可选）查看记忆图谱
 
-初始化完成后，运行：
+> 当前默认关闭 Mem0 的 Graph Memory（Kuzu 图谱），项目仅使用 Chroma 向量记忆来支撑导入与对话。
+> 如果你按默认配置运行，本节脚本会连到一个空的或不存在的图数据库。
+
+如果你在本地按 Mem0 官方文档另外启用了 Graph Memory（例如改用 Neo4j / Memgraph，并在 `main.py` 的 `config` 里重新配置了 `graph_store`），可以使用本仓库自带的查看脚本：
 
 ```bash
 uv run python view_graph.py
@@ -177,15 +180,15 @@ uv run python view_graph.py
 
 脚本会：
 
-- 连接 `./mem0_graph.kuzu`；
+- 连接 `./mem0_graph.kuzu`（或你配置的 Kuzu 路径）；
 - 打印前 5 个 `Entity` 节点；
 - 列出所有节点的 `name / user_id / agent_id`；
 - 列出所有 `CONNECTED_TO` 关系。
 
-如果输出中节点/关系为 0，通常说明：
+如需启用 Graph Memory，建议参考：
 
-- 小说太短，或缺少可抽取的实体关系；
-- 或导入没有成功（可重新运行 `main.py` 并注意报错）。
+- Mem0 官方 Graph 文档：`https://docs.mem0.ai/open-source/graph_memory/overview`
+- 本仓库中的配置示例：[c:/code/mem0-roleplay/GRAPH_CONFIG_EXAMPLES.md](c:/code/mem0-roleplay/GRAPH_CONFIG_EXAMPLES.md)
 
 ---
 
