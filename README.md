@@ -190,6 +190,30 @@ uv run python view_graph.py
 - Mem0 官方 Graph 文档：`https://docs.mem0.ai/open-source/graph_memory/overview`
 - 本仓库中的配置示例：[c:/code/mem0-roleplay/GRAPH_CONFIG_EXAMPLES.md](c:/code/mem0-roleplay/GRAPH_CONFIG_EXAMPLES.md)
 
+### 6. （可选）仅生成图谱并分析（不聊天）
+
+如果你不想走聊天机制，只想把 TXT 导入并生成/分析图谱，可以使用新增脚本 `build_graph.py`。
+
+它会：
+
+- 读取 TXT → 分章/切片 → 写入 Mem0（开启 `graph_store: kuzu`）；
+- 生成 Kuzu 图谱数据库（默认 `./mem0_graph.kuzu`，可用 `MEM0_GRAPH_PATH` 改）；
+- 直接连接 Kuzu 输出基础分析：节点/关系样例 + 总数统计。
+
+示例（推荐显式指定 embedding 维度；`nomic-embed-text` 常见为 768）：
+
+```bash
+uv run python build_graph.py --txt 星辰的秘密.txt --book 星辰的秘密 --embedding-dims 768 --force
+```
+
+说明：
+
+- `--force` 会删除既有的向量库/图谱库目录后重建（避免新旧数据混在一起）。
+- `--infer true/false`：
+  - `true`（默认）会让 Mem0 走抽取链路，才可能生成实体/关系图谱；
+  - `false` 主要用于诊断（只写向量，不保证生成图谱）。
+- 如果你在 Windows 控制台看到中文显示成乱码，不影响功能（控制台编码问题）；脚本避免使用 emoji 以减少编码报错。
+
 ---
 
 ## 核心 API / 函数说明

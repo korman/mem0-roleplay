@@ -10,3 +10,6 @@ __pycache__/
 *.pyc
 .venv/
 uv.lock  # 等你 commit 一次后再取消这行（第一次提交时保留）
+/mem0_db_graph_run2
+/mem0_db_graph_run
+*.wal
